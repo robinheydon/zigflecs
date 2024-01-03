@@ -16,10 +16,25 @@ pub fn build(b: *std.Build) !void {
 
     try c_files.append ("flecs/flecs.c");
     try c_flags.append ("-Iflecs");
+    try c_flags.append ("-std=gnu99");
+    try c_flags.append ("-D_POSIX_C_SOURCE=202401L");
+    try c_flags.append ("-fno-sanitize=undefined");
+    try c_flags.append ("-DFLECS_NO_CPP");
+    try c_flags.append ("-DFLECS_USE_OS_ALLOC");
+    if (@import("builtin").mode == .Debug)
+    {
+        try c_flags.append ("-DFLECS_SANITIZE");
+    }
+
+    lib.linkLibC ();
 
     lib.addCSourceFiles (.{
         .files = c_files.items,
         .flags = c_flags.items,
+    });
+
+    _ = b.addModule ("zigflecs", .{
+        .source_file = .{ .path = "src/flecs.zig" },
     });
 
     b.installArtifact(lib);
