@@ -5,16 +5,19 @@ pub fn build(b: *std.Build) !void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "zigflecs",
-        .root_source_file = .{ .path = "src/flecs.zig" },
+        .name = "flecs",
         .target = target,
         .optimize = optimize,
     });
+
+    lib.installHeadersDirectory("flecs", "flecs");
 
     var c_files = std.ArrayList ([]const u8).init (b.allocator);
     var c_flags = std.ArrayList ([]const u8).init (b.allocator);
 
     try c_files.append ("flecs/flecs.c");
+
+    try c_flags.append ("-g");
     try c_flags.append ("-Iflecs");
     try c_flags.append ("-std=gnu99");
     try c_flags.append ("-D_POSIX_C_SOURCE=202401L");
@@ -33,11 +36,11 @@ pub fn build(b: *std.Build) !void {
         .flags = c_flags.items,
     });
 
+    b.installArtifact(lib);
+
     _ = b.addModule ("zigflecs", .{
         .source_file = .{ .path = "src/flecs.zig" },
     });
-
-    b.installArtifact(lib);
 
     // Creates a step for unit testing. This only builds the test executable
     // but does not run it.
